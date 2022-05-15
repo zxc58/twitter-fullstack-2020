@@ -11,7 +11,7 @@ const userController = {
     if (helper.getUser(req).role === 'admin') {
       req.flash('error_messages', '帳號不存在')
       req.logout()
-      res.redirect('/admin/signin')
+      res.redirect('/signin')
     }
     req.flash('success_messages', '登入成功!')
     res.redirect('/tweets')
