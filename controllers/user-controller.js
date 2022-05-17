@@ -4,6 +4,7 @@ const helpers = require('../_helpers')
 const { User, Tweet, Reply, Like } = db
 const { imgurFileHandler } = require('../helpers/file-helpers') 
 const { Op } = require("sequelize")
+const { catchTopUsers } = require('../helpers/sequelize-helper')
 const userController = {
   signInPage: (req, res) => {
     res.render('signin')
@@ -16,6 +17,7 @@ const userController = {
     }
     req.flash('success_messages', '登入成功!')
     res.redirect('/tweets')
+
   },
   signUpPage: (req, res) => {
     res.render('register')
@@ -93,14 +95,31 @@ const userController = {
         
         const user = await User.findByPk(UserId, {
             include:[
-                { model: Tweet, include: [Reply] },
+                { model: Tweet, include: [Reply, Like] },
                 { model: Reply, include: { model: Tweet, include: [User]}},
                 { model: User, as: 'Followings' },
                 { model: User, as: 'Followers' }
             ]})
+        const topUsers =await catchTopUsers(req)
+        const data= user.Tweets.map(e=>({
+          ...e.toJSON(),
+          totalLike : e.Likes.length,
+          totalReply : e.Replies.length,
+          isLiked : e.Likes.some(f => f.UserId === helpers.getUser(req).id)
+        }))
         if (!user) throw new Error ("User didn't exists!")
-        console.log(user)
-        res.render('user', {user: user.toJSON()})
+        const followersCount = user.Followers.length
+        const followingsCount = user.Followings.length
+        const tweetsCount = user.Tweets.length
+        
+        res.render('user', {
+          user: user.toJSON(),
+          topUsers,
+          tweets: data,
+          followersCount,
+          followingsCount,
+          tweetsCount     
+        })
                  
     } catch (err) {
         next(err)
@@ -111,17 +130,61 @@ getLikes: async(req, res, next) => {
       const UserId = req.params.id
       const user = await User.findByPk(UserId, {
           include: [
-              { model : Like, include: [ { model : Tweet, include: [User] }]},
+              { model : Like, include: [ { model : Tweet , include: [User, Like, Reply] }]},
               { model: User, as: 'Followings' },
               { model: User, as: 'Followers' }
           ]
       })
+      const topUsers =await catchTopUsers(req)
+      const followersCount = user.Followers.length
+      const followingsCount = user.Followings.length
+      const data = user.Likes.map(e=>({
+        ...e.toJSON(),
+        totalLike : e.Tweet.Likes.length,
+        totalReply : e.Tweet.Replies.length,
+        isLiked : e.Tweet.Likes.some(f => f.UserId === helpers.getUser(req).id)
+      }))
+     
       if (!user) throw new Error ("User didn't exists!")
-      console.log(user)
-      return res.render('user', {user:user.toJSON()})
+      return res.render('user', {
+        user:user.toJSON(),
+        likes: data,
+        topUsers,
+        followersCount,
+        followingsCount
+      })
   } catch (err) {
       next(err)
   }
+},
+getReplies: async(req, res, next) => {
+  try {
+    const UserId = req.params.id
+    const user = await User.findByPk(UserId, {
+        include: [
+            { model : Reply, include: [ { model : Tweet , include: [User] }]},
+            { model: User, as: 'Followings' },
+            { model: User, as: 'Followers' }
+        ]
+    })
+    const topUsers =await catchTopUsers(req)
+    const followersCount = user.Followers.length
+    const followingsCount = user.Followings.length
+    const userReplies = user.Replies
+    console.log(user.Replies)
+   
+    if (!user) throw new Error ("User didn't exists!")
+    return res.render('user', {
+      user:user.toJSON(),
+      userReplies,
+      topUsers,
+      followersCount,
+      followingsCount
+    })
+} catch (err) {
+    next(err)
+}
+
 },
 editUser: async(req, res, next) => {
   try {
