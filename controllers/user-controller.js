@@ -133,8 +133,10 @@ editUser: async(req, res, next) => {
                   { model: User, as: 'Followers' } ,     
           ]
         })
-        if (currentUser.id !== user.id) throw new Error("無法編輯他人資料!")
-        res.render('editUser',{user: user.toJSON()})
+        if (currentUser.id !== user.id) {
+          return res.json({status: 'error', messages:'無法編輯其他使用者資料'})
+        }
+        res.json(user.toJSON())
   } catch (err) {
       next(err)
   }
@@ -200,6 +202,35 @@ putUser: async(req, res, next) => {
     next(err)
   }
 },
-
+putUserProfile: async(req, res, next) => {
+  const UserId = helpers.getUser(req).id
+      const { name, introduction } = req.body
+      const { avatar, cover } = req.files
+  try {
+      
+      let uploadAvatar = ''
+      let uploadCover = ''
+      if (avatar ) {
+        uploadAvatar = await imgurFileHandler(avatar[0]) 
+      }
+      if (cover) {
+        uploadCover = await imgurFileHandler(cover[0]) 
+      }
+      const user = await User.findByPk(UserId)
+      if(!name) throw new Error ("User name is required!")
+      if(introduction.length > 140) throw new Error ('自我介紹字數超過140字')
+      await user.update({
+          name,
+              introduction,
+              avatar: uploadAvatar || user.avatar,
+              cover: uploadCover ||user.cover
+      })
+      console.log(user)
+      req.flash('success_messages', '成功更新個人資料！')
+      res.render('user',{user: user.toJSON()})
+  } catch (err) {
+      next(err)
+  }
+}
 }
 module.exports = userController
