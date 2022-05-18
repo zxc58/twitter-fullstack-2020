@@ -14,7 +14,7 @@ const replyController = {
       ,Reply.findAndCountAll({
         where:{TweetId},include:{
           model:User,attributes:['id',"name","account",'avatar']
-        },raw:true,nest:true
+        },raw:true,nest:true,order:[['createdAt','DESC']]
       }),Like.findAndCountAll({
         where:{
           TweetId
@@ -26,7 +26,6 @@ const replyController = {
         throw new Error('This tweet id do not exist')
       }
       likes.isLiked = likes.rows.some(like=>like.UserId===helpers.getUser(req).id)
-      // res.json(tweet)
       res.render('tweet',{tweet,topUsers,replies,likes})
     }).catch(err => next(err))
   },
@@ -43,9 +42,9 @@ const replyController = {
           UserId: helpers.getUser(req).id,
           comment
         })
-      }).then(() => {
-        res.redirect('/')
-      }).catch(err => next(err))
+      })
+      .then(() => {res.redirect(`${req.get('Referrer')}`)})
+      .catch(err => next(err))
   }
 }
 module.exports = replyController
