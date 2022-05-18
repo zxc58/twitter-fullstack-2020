@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs')
 const db = require('../models')
 const helpers = require('../_helpers')
-const { User, Tweet, Reply, Like } = db
+const { User, Tweet, Reply, Like, sequelize } = db
 const { imgurFileHandler } = require('../helpers/file-helpers')
 const { Op } = require("sequelize")
 const { catchTopUsers } = require('../helpers/sequelize-helper')
@@ -92,7 +92,7 @@ const userController = {
   getUser: async (req, res, next) => {
     try {
       const UserId = req.params.id
-
+      const currentUser = helpers.getUser(req)
       const user = await User.findByPk(UserId, {
         include: [
           { model: Tweet, include: [Reply, Like] },
@@ -119,7 +119,8 @@ const userController = {
         tweets: data,
         followersCount,
         followingsCount,
-        tweetsCount
+        tweetsCount,
+        currentUser
       })
 
     } catch (err) {
@@ -232,6 +233,9 @@ const userController = {
     } catch (err) {
       next(err)
     }
+
+
+
   },
 
   getFollowers: async (req, res, next) => {
@@ -240,7 +244,7 @@ const userController = {
       const data = await User.findByPk(UserId, {
         include: [
           Tweet,
-          { model: User, as: 'Followers' },
+          { model: User, as: 'Followers', include:{model: User,as:'Followers'}},
         ],
         order: [['createdAt', 'DESC']]
       })
@@ -248,10 +252,13 @@ const userController = {
       const tweetsCounts = data.Tweets.length
       let followers = 'followers'
       if (!data) throw new Error("User didn't exists!")
-      
-
+      const user = data.toJSON()
+      user.Followers.forEach(e=>{
+        e.isFollowed = e.Followers.some(f=>f.id===helpers.getUser(req).id)
+      })
+      // res.json(data.toJSON())
       return res.render('followers', {
-        data: data.toJSON(),
+        data: user,
         topUsers,
         tweetsCounts,
         followers
@@ -274,7 +281,7 @@ const userController = {
       const tweetsCounts = data.Tweets.length
       let followings = 'followings'
       if (!data) throw new Error("User didn't exists!")
-      
+
 
       return res.render('followings', {
         data: data.toJSON(),
@@ -287,11 +294,10 @@ const userController = {
     }
   },
   putUserProfile: async (req, res, next) => {
-    const UserId = helpers.getUser(req).id
-    const { name, introduction } = req.body
-    const { avatar, cover } = req.files
     try {
-
+      const UserId = helpers.getUser(req).id
+      const { name, introduction } = req.body
+      const { avatar, cover } = req.files
       let uploadAvatar = ''
       let uploadCover = ''
       if (avatar) {
@@ -301,20 +307,20 @@ const userController = {
         uploadCover = await imgurFileHandler(cover[0])
       }
       const user = await User.findByPk(UserId)
-      if (!name) throw new Error("User name is required!")
-      if (introduction.length > 140) throw new Error('自我介紹字數超過140字')
+      if (!name) throw new Error("名稱不可以為空白")
+      if (name.length > 50) throw new Error("名稱字數不可超過50字")
+      if (introduction.length > 140) throw new Error("自我介紹字數不可超過160字")
       await user.update({
         name,
         introduction,
         avatar: uploadAvatar || user.avatar,
         cover: uploadCover || user.cover
       })
-      console.log(user)
-      req.flash('success_messages', '成功更新個人資料！')
-      res.render('user', { user: user.toJSON() })
+      res.redirect(`/users/${UserId}/tweets`)
     } catch (err) {
       next(err)
     }
   }
+
 }
 module.exports = userController
