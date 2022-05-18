@@ -6,19 +6,19 @@
                 <a class="fs-5" style="color: black" href="/users/{{data.id}}/tweets" ><i class="fas fa-arrow-left"></i></a>
             </div>
             <div class="col">
-                <span class="fw-bold">{{data.name}}</span><br />
+                <span class="fw-bold">{{data.name}}</span><br/>
                 <small>{{tweetsCounts}} 推文</small>
             </div>
         </div>
-        <hr />
-         {{> followships-nav route='followers'}}
+        <hr/>
+        {{> followships-nav route='followers'}}
         <hr/ class="mt-0">
         {{#each data.Followers}}
             {{> followship-block}}
         {{/each}}
     </div>
-      <div class="col-3">{{> right-nav}}</div>  
+    <div class="col-3">{{> right-nav}}</div>  
 </div>
 <script>
     document.getElementById("middle").style.height =  window.innerHeight+'px';
-</script> 
+</script>

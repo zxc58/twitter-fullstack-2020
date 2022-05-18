@@ -1,20 +1,20 @@
 <div class="row">
     <div class="col">{{> left-nav}}</div>
-      <div class="col-7 border-start border-end px-0" id="middle" style="overflow:auto;">
+    <div class="col-7 border-start border-end px-0" id="middle" style="overflow:auto;">
         <div class="row mx-1">
             <div class="col-1 ">
                 <a class="fs-5" style="color: black" href="/users/{{data.id}}/tweets" ><i class="fas fa-arrow-left"></i></a>
             </div>
             <div class="col">
-               <span class="fw-bold">{{data.name}}</span><br/>
-               <small>{{tweetsCounts}} 推文</small>
+                <span class="fw-bold">{{data.name}}</span><br/>
+                <small>{{tweetsCounts}} 推文</small>
             </div>
         </div>
         <hr/>
         {{> followships-nav route='followings'}}
         <hr/ class="mt-0">
             {{#each data.Followings}}
-               {{> followship-block}}
+                {{> followship-block}}
             {{/each}}
     </div>
     <div class="col-3">{{> right-nav}}</div>  
@@ -22,4 +22,4 @@
 
 <script>
     document.getElementById("middle").style.height =  window.innerHeight+'px';
-</script> 
+</script>
