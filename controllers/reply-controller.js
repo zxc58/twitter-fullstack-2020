@@ -32,6 +32,10 @@ const replyController = {
   postReply: (req, res, next) => {
     const TweetId = req.params.id
     const { comment } = req.body
+    if (comment.length>140){
+      req.flash('error_messages','表單認證不通過')
+      return res.redirect('back')
+    }
     return Tweet.findByPk(TweetId)
       .then(tweet => {
         if (!tweet) {

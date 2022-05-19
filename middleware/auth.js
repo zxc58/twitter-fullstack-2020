@@ -16,7 +16,7 @@ const authenticatedAdmin = (req, res, next) => {
     if (helpers.getUser(req).role === 'admin') {
       return next() 
     }
-    res.redirect('/')
+    res.redirect('back')
   } else {
     res.redirect('/signin')
   }

@@ -30,7 +30,6 @@ const tweetController = {
         totalReply : e.Replies.length,
         isLiked : e.Likes.some(f=>f.UserId===helpers.getUser(req).id)
       }))
-      // res.json(t)
       res.render('index',{tweets:data,topUsers,pagination: getPagination(limit, page, T.count)})
     }).catch(err => next(err))
   },
@@ -38,7 +37,8 @@ const tweetController = {
     const UserId = helpers.getUser(req).id
     const description = req.body.description
     if(description.length>140){
-      return res.redirect('/tweets')
+      req.flash('error_messages','表單認證不通過')
+      return res.redirect('back')
     }
     return Tweet.create({
       description: req.body.description,
