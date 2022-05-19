@@ -92,10 +92,10 @@ const userController = {
   getUser: async (req, res, next) => {
     try {
       const UserId = req.params.id
-
+      const currentUser = helpers.getUser(req)
       const user = await User.findByPk(UserId, {
         include: [
-          { model: Tweet, include: [Reply, Like] },
+          { model: Tweet, include: [Reply, Like, User] },
           { model: Reply, include: { model: Tweet, include: [User] } },
           { model: User, as: 'Followings' },
           { model: User, as: 'Followers' }
@@ -114,12 +114,14 @@ const userController = {
       const tweetsCount = user.Tweets.length
 
       res.render('user', {
+        
         user: user.toJSON(),
         topUsers,
         tweets: data,
         followersCount,
         followingsCount,
-        tweetsCount
+        tweetsCount,
+        currentUser
       })
 
     } catch (err) {
@@ -139,13 +141,17 @@ const userController = {
       const topUsers = await catchTopUsers(req)
       const followersCount = user.Followers.length
       const followingsCount = user.Followings.length
-      const data = user.Likes.map(e => ({
-        ...e.toJSON(),
-        totalLike: e.Tweet.Likes.length,
-        totalReply: e.Tweet.Replies.length,
-        isLiked: e.Tweet.Likes.some(f => f.UserId === helpers.getUser(req).id)
-      }))
-
+      const data = user.Likes.map(e => {
+        const f = {...e.toJSON()}
+        f.Tweet.totalLike= f.Tweet.Likes.length,
+        f.Tweet.totalReply= f.Tweet.Replies.length,
+        f.Tweet.isLiked= f.Tweet.Likes.some(g => g.UserId === helpers.getUser(req).id)
+        return f
+        // ...e.toJSON(),
+        // totalLike: e.Tweet.Likes.length,
+        // totalReply: e.Tweet.Replies.length,
+        // isLiked: e.Tweet.Likes.some(f => f.UserId === helpers.getUser(req).id),
+      })
       if (!user) throw new Error("User didn't exists!")
       return res.render('user', {
         user: user.toJSON(),
@@ -166,7 +172,7 @@ const userController = {
           { model: Reply, include: [{ model: Tweet, include: [User] }] },
           { model: User, as: 'Followings' },
           { model: User, as: 'Followers' }
-        ]
+        ],
       })
       const topUsers = await catchTopUsers(req)
       const followersCount = user.Followers.length
@@ -184,56 +190,7 @@ const userController = {
     } catch (err) {
       next(err)
     }
-
   },
-  editUser: async (req, res, next) => {
-    try {
-      const currentUser = helpers.getUser(req)
-      const UserId = req.params.id
-      const user = await User.findOne({
-        where: { id: UserId },
-        include: [
-          { model: User, as: 'Followings' },
-          { model: User, as: 'Followers' },
-        ]
-      })
-      if (currentUser.id !== user.id) {
-        return res.json({ status: 'error', messages: '無法編輯其他使用者資料' })
-      }
-      res.json(user.toJSON())
-    } catch (err) {
-      next(err)
-    }
-  },
-  putUser: async (req, res, next) => {
-    try {
-      const UserId = helpers.getUser(req).id
-      const { name, introduction } = req.body
-      const { avatar, cover } = req.files
-      let uploadAvatar = ''
-      let uploadCover = ''
-      if (avatar) {
-        uploadAvatar = await imgurFileHandler(avatar[0])
-      }
-      if (cover) {
-        uploadCover = await imgurFileHandler(cover[0])
-      }
-      const user = await User.findByPk(UserId)
-      if (!name) throw new Error("User name is required!")
-      if (introduction.length > 140) throw new Error('自我介紹字數超過160字')
-      await user.update({
-        name,
-        introduction,
-        avatar: uploadAvatar || user.avatar,
-        cover: uploadCover || user.cover
-      })
-      console.log(UserId)
-      res.redirect(`/users/${UserId}/tweets`)
-    } catch (err) {
-      next(err)
-    }
-  },
-
   getFollowers: async (req, res, next) => {
     try {
       const UserId = req.params.id
@@ -292,14 +249,14 @@ const userController = {
       next(err)
     }
   },
-  putUserProfile: async (req, res, next) => {
-    const UserId = helpers.getUser(req).id
-    const { name, introduction } = req.body
-    const { avatar, cover } = req.files
+  putUser: async (req, res, next) => {
     try {
-
+      const UserId = helpers.getUser(req).id
+      const { name, introduction } = req.body
+      const { avatar , cover } = req.files
       let uploadAvatar = ''
       let uploadCover = ''
+      
       if (avatar) {
         uploadAvatar = await imgurFileHandler(avatar[0])
       }
@@ -307,17 +264,16 @@ const userController = {
         uploadCover = await imgurFileHandler(cover[0])
       }
       const user = await User.findByPk(UserId)
-      if (!name) throw new Error("User name is required!")
-      if (introduction.length > 140) throw new Error('自我介紹字數超過140字')
-      await user.update({
+      if (!name) throw new Error("名稱不可為空白!")
+      if (name.length > 50) throw new Error("名稱內容不可超過50字!")
+      if (introduction.length > 160) throw new Error("自我介紹內容不可超過160字!")
+        await user.update({
         name,
         introduction,
         avatar: uploadAvatar || user.avatar,
         cover: uploadCover || user.cover
       })
-      console.log(user)
-      req.flash('success_messages', '成功更新個人資料！')
-      res.render('user', { user: user.toJSON() })
+      res.redirect(`/users/${UserId}/tweets`)
     } catch (err) {
       next(err)
     }
