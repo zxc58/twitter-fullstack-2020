@@ -102,21 +102,23 @@ const userController = {
     try {
       const UserId = req.params.id
       const currentUser = helpers.getUser(req)
-      const user = await User.findByPk(UserId, {
-        include: [
-          { model: Tweet, include: [Reply, Like, User] },
-          { model: Reply, include: { model: Tweet, include: [User] } },
-          { model: User, as: 'Followings' },
-          { model: User, as: 'Followers' }
-        ]
-      })
-      const topUsers = await catchTopUsers(req)
+      const [user,topUsers] = await Promise.all([ 
+        User.findByPk(UserId, {
+          include: [
+            { model: Tweet, include: [Reply, Like, User]},
+            { model: Reply, include: { model: Tweet, include: [User] } },
+            { model: User, as: 'Followings' },
+            { model: User, as: 'Followers' }
+          ]
+        })
+        ,catchTopUsers(req)
+      ])
       const data = user.Tweets.map(e => ({
         ...e.toJSON(),
         totalLike: e.Likes.length,
         totalReply: e.Replies.length,
         isLiked: e.Likes.some(f => f.UserId === helpers.getUser(req).id)
-      }))
+      })).reverse()
       if (!user) throw new Error("User didn't exists!")
       const followersCount = user.Followers.length
       const followingsCount = user.Followings.length
@@ -140,14 +142,17 @@ const userController = {
   getLikes: async (req, res, next) => {
     try {
       const UserId = req.params.id
-      const user = await User.findByPk(UserId, {
-        include: [
-          { model: Like, include: [{ model: Tweet, include: [User, Like, Reply] }] },
-          { model: User, as: 'Followings' },
-          { model: User, as: 'Followers' }
-        ]
-      })
-      const topUsers = await catchTopUsers(req)
+      const [user, topUsers] = await Promise.all([ 
+        User.findByPk(UserId, {
+          include: [
+            { model: Like, include: [{ model: Tweet, include: [User, Like, Reply] }] },
+            { model: User, as: 'Followings' },
+            { model: User, as: 'Followers' }
+          ],
+          order:[[sequelize.col('Likes.createdAt'),'DESC']]
+        })
+        ,catchTopUsers(req)
+      ])
       const followersCount = user.Followers.length
       const followingsCount = user.Followings.length
       const data = user.Likes.map(e => {
@@ -156,10 +161,6 @@ const userController = {
         f.Tweet.totalReply= f.Tweet.Replies.length,
         f.Tweet.isLiked= f.Tweet.Likes.some(g => g.UserId === helpers.getUser(req).id)
         return f
-        // ...e.toJSON(),
-        // totalLike: e.Tweet.Likes.length,
-        // totalReply: e.Tweet.Replies.length,
-        // isLiked: e.Tweet.Likes.some(f => f.UserId === helpers.getUser(req).id),
       })
       if (!user) throw new Error("User didn't exists!")
       return res.render('user', {
@@ -176,21 +177,25 @@ const userController = {
   getReplies: async (req, res, next) => {
     try {
       const UserId = req.params.id
-      const user = await User.findByPk(UserId, {
-        include: [
-          { model: Reply, include: [{ model: Tweet, include: [User] }] },
-          { model: User, as: 'Followings' },
-          { model: User, as: 'Followers' }
-        ],
-      })
-      const topUsers = await catchTopUsers(req)
-      const followersCount = user.Followers.length
-      const followingsCount = user.Followings.length
-      const userReplies = user.Replies
+      const [user,topUsers] = await Promise.all ([
+        User.findByPk(UserId, {
+          include: [
+            { model: Reply, include: [{ model: Tweet, include: [User] }] },
+            { model: User, as: 'Followings' },
+            { model: User, as: 'Followers' }
+          ],
+        })
+        ,catchTopUsers(req)
+      ])
+      const data =user.toJSON()
+      data.Replies=data.Replies.reverse()
+      const followersCount = data.Followers.length
+      const followingsCount = data.Followings.length
+      const userReplies =data.Replies
 
       if (!user) throw new Error("User didn't exists!")
       return res.render('user', {
-        user: user.toJSON(),
+        user: data,
         userReplies,
         topUsers,
         followersCount,
@@ -203,14 +208,16 @@ const userController = {
   getFollowers: async (req, res, next) => {
     try {
       const UserId = req.params.id
-      const data = await User.findByPk(UserId, {
-        include: [
-          Tweet,
-          { model: User, as: 'Followers', include:{model: User,as:'Followers'}},
-        ],
-        order: [['createdAt', 'DESC']]
-      })
-      const topUsers = await catchTopUsers(req)
+      const [data,topUsers ] = await Promise.all([ 
+        User.findByPk(UserId, {
+          include: [
+            Tweet,
+            { model: User, as: 'Followers', include:{model: User,as:'Followers'}},
+          ],
+          order: [[sequelize.col('Followers.Followship.createdAt'), 'DESC']]
+        })
+        ,catchTopUsers(req)
+      ])
       const tweetsCounts = data.Tweets.length
       let followers = 'followers'
       if (!data) throw new Error("User didn't exists!")
@@ -218,7 +225,6 @@ const userController = {
       user.Followers.forEach(e=>{
         e.isFollowed = e.Followers.some(f=>f.id===helpers.getUser(req).id)
       })
-      // res.json(data.toJSON())
       return res.render('followers', {
         data: user,
         topUsers,
@@ -232,14 +238,16 @@ const userController = {
   getFollowings: async (req, res, next) => {
     try {
       const UserId = req.params.id
-      const data = await User.findByPk(UserId, {
-        include: [
-          Tweet,
-          { model: User, as: 'Followings',include:{model: User,as:'Followers'}},
-        ],
-        order: [['createdAt', 'DESC']]
-      })
-      const topUsers = await catchTopUsers(req)
+      const [data,topUsers] = await Promise.all([
+        User.findByPk(UserId, {
+          include: [
+            Tweet,
+            { model: User, as: 'Followings',include:{model: User,as:'Followers'}},
+          ],
+          order: [[sequelize.col('Followings.Followship.createdAt'), 'DESC']]
+        })
+        ,catchTopUsers(req)
+      ])
       const tweetsCounts = data.Tweets.length
       let followings = 'followings'
       if (!data) throw new Error("User didn't exists!")
@@ -247,7 +255,6 @@ const userController = {
       user.Followings.forEach(e=>{
         e.isFollowed = e.Followers.some(f=>f.id===helpers.getUser(req).id)
       })
-      // user.Followings.forEach(e=>{e.isFollowed=true})
       return res.render('followings', {
         data: user,
         topUsers,
@@ -273,9 +280,9 @@ const userController = {
         uploadCover = await imgurFileHandler(cover[0])
       }
       const user = await User.findByPk(UserId)
-      if (!name) throw new Error("名稱不可為空白!")
+      if (!name) throw new Error("名稱不可空白！")
       if (name.length > 50) throw new Error("字數超出上限！")
-      if (introduction.length > 160) throw new Error("自我介紹內容不可超過160字!")
+      if (introduction.length > 160) throw new Error("字數超出上限！")
         await user.update({
         name,
         introduction,
