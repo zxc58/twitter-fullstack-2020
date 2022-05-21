@@ -72,13 +72,13 @@ const userController = {
       .then(([userId, userAccount, userEmail]) => {
         if (req.user.id !== id) throw new Error("無法編輯他人資料!")
         if (!userId) throw new Error("使用者不存在!")
-        if (userAccount.id !== userId.id) {
-          if (userAccount) {
+        if (!userAccount == null) {
+          if (userAccount.id !== userId.id) {
             throw new Error("account 已重複註冊！")
           }
         }
-        if (userEmail.id !== userId.id) {
-          if (userEmail) {
+        if (!userEmail == null ) {
+          if (userEmail.id !== userId.id) {
             throw new Error("email 已重複註冊！")
           }
         }
