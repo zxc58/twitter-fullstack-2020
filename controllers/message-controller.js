@@ -27,11 +27,11 @@ const messageController = {
   startChattingWith: async (req, res, next) => {
     try {
       const id = helpers.getUser(req).id
-      const newId = Number(req.params.id)
+      const newChattingId = Number(req.params.id)
       const chatUsers = await User.findAll({
       //
         where: {
-          [Op.or]: [sequelize.where(sequelize.col('sentMessages.receiverId'), id), sequelize.where(sequelize.col('receivedMessages.senderId'), id), { id: newId }]
+          [Op.or]: [sequelize.where(sequelize.col('sentMessages.receiverId'), id), sequelize.where(sequelize.col('receivedMessages.senderId'), id)]
         },
         include: [{ model: Message, as: 'sentMessages', where: { receiverId: id } }, { model: Message, as: 'receivedMessages', where: { senderId: id } }],
         attributes: { include: [[sequelize.fn('MIN', sequelize.col('receivedMessages.beenSeen')), 'allBeenSeen']] },
@@ -39,8 +39,8 @@ const messageController = {
         raw: true,
         nest: true
       })
-
-      res.render('chat', { chatUsers, newId })
+      const newChatting = await User.findByPk(newChattingId)
+      res.render('chat', { chatUsers, newChatting: newChatting.toJSON() })
     } catch (err) {
       next(err)
     }
