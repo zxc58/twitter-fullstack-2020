@@ -98,15 +98,19 @@ const apiController = {
     try {
       const self = helpers.getUser(req).id
       const other = Number(req.params.id)
-      const chatHistory = await Message.findAll({
-        where: {
-          [Op.or]: [{ senderId: self, receiverId: other }, { senderId: other, receiverId: self }]
-        },
-        order: [[sequelize.col('createdAt'), 'ASC']],
-        raw: true,
-        nest: true
-      })
-      res.json({ status: 'success', data: chatHistory })
+      const [chatHistory, newMessage] = await Promise.all([
+        Message.findAll({
+          where: {
+            [Op.or]: [{ senderId: self, receiverId: other }, { senderId: other, receiverId: self }]
+          },
+          order: [[sequelize.col('createdAt'), 'ASC']],
+          raw: true,
+          nest: true
+        }),
+        Message.findOne({ where: { senderId: { [Op.ne]: other }, receiverId: self, beenSeen: 0 } }),
+        Message.update({ beenSeen: 1 }, { where: { senderId: other, receiverId: self } })
+      ])
+      res.json({ status: 'success', data: chatHistory, newMessage: !!newMessage })
     } catch (err) {
       next(err)
     }

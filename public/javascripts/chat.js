@@ -65,7 +65,6 @@ function change(e){
 
     //api chat history
     axios.get(`/api/messages/chat/${userId}`).then(result=>{
-        // console.log(result.data)
         const id = Number(userId)
         chatContent.innerHTML=result.data.data.reduce((total,e)=>{
             if(id===e.receiverId)
@@ -73,5 +72,13 @@ function change(e){
             else
                 return total+othersMessage(e.content)
         },'')
+        console.log(result.data.newMessage)
+        if(result.data.newMessage){
+            console.log("true1")
+            publicChatRemind.style.visibility='visible'
+        }else{
+            console.log("false1")
+            publicChatRemind.style.visibility='hidden'
+        }
     })
 }

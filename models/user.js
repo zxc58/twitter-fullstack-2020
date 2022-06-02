@@ -18,16 +18,6 @@ module.exports = (sequelize, DataTypes) => {
       })
       User.hasMany(models.Message, { foreignKey: 'senderId', as: 'sentMessages' })
       User.hasMany(models.Message, { foreignKey: 'receiverId', as: 'receivedMessages' })
-      // User.belongsToMany(User, {
-      //   through: models.Message,
-      //   foreignKey: 'senderId',
-      //   as: 'receivers'
-      // })
-      // User.belongsToMany(User, {
-      //   through: models.Message,
-      //   foreignKey: 'receiverId',
-      //   as: 'senders'
-      // })
     }
   }
   User.init({

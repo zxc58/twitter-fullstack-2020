@@ -61,5 +61,7 @@
     color:#FF6600;
     position: relative;
     bottom: 10px;
+}
+.hidden{
     visibility:hidden;
 }

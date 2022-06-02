@@ -8,10 +8,11 @@
                 </span>
             </a>
             {{#each chatUsers}}
+                <script> console.log({{this.allBeenSeen}})</script>
                 <a class="nav-link border-bottom blockstyle" name="chat-user" {{#ifCond ../newId this.id}}id="new-id"{{/ifCond}} data-user-id="{{this.id}}" onclick="change(this)">
                     <img src="{{this.avatar}}" class="rounded-circle" style="width:40px;height:40px">
                     <span class="fs-5 fw-bold text-dark" id="chat-user-name">{{this.name}}</span>
-                    <span class="remindIcon fs-3" id="orange-point">&bull;</span>
+                    <span class="remindIcon fs-3 {{#ifCond this.allBeenSeen 0 }}{{else}}hidden{{/ifCond}}" id="orange-point">&bull;</span>
                 </a>
             {{/each}}
         </nav>
