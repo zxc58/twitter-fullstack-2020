@@ -1,5 +1,5 @@
 const db = require('../models')
-const { Tweet, User, Like, Reply, sequelize, Followship } = db
+const { User, Followship } = db
 const helpers = require('../_helpers')
 const followshipController = {
   postFollowship: (req, res, next) => {

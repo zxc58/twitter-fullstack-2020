@@ -1,6 +1,5 @@
-const { Op } = require('sequelize')
 const db = require('../models')
-const { Tweet, User, Like, Reply, sequelize } = db
+const { Tweet, User, Like, Reply } = db
 const { catchTopUsers } = require('../helpers/sequelize-helper')
 const helpers = require('../_helpers')
 const replyController = {

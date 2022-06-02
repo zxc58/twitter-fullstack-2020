@@ -1,4 +1,3 @@
-const { getOffset, getPagination } = require('../helpers/pagination-helper')
 const db = require('../models')
 const { Tweet, User, Like, Reply, sequelize } = db
 const { catchTopUsers } = require('../helpers/sequelize-helper')
@@ -6,8 +5,6 @@ const helpers = require('../_helpers')
 const tweetController = {
   getTweets: (req, res, next) => {
     const limit = Number(req.query.limit) || 20
-    const page = Number(req.query.page) || 1
-    const offset = getOffset(limit, page)
     return Promise.all([Tweet.findAll({
       include: [{
         model: User,
@@ -28,7 +25,6 @@ const tweetController = {
       group: 'Tweet.id',
       order: [['createdAt', 'DESC']],
       limit,
-      offset,
       raw: true,
       nest: true
     }),

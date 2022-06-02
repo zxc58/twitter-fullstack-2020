@@ -2,6 +2,7 @@ const http = require('http')
 const app = require('./app')
 const { Server } = require('socket.io')
 const { Message } = require('./models')
+const port = process.env.PORT || 3000
 //
 const server = http.createServer(app)
 const io = new Server(server)
@@ -28,4 +29,4 @@ io.on('connection', socket => {
   }
   console.log('success', userId)
 })
-server.listen(3000, () => 1)
+server.listen(port, () => console.log('server start now'))
