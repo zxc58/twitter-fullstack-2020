@@ -59,15 +59,16 @@ socket.on('get message', async (message) => {
         chatUser.querySelector('i').classList.remove('hidden')
     }else{
         //add a new nav for this sender
-        document.getElementById('people-group').innerHTML+=newChatter(JSON.parse(message).sender)
+        document.getElementById('people-group').innerHTML+=newChatter(JSON.parse(message).sender,true)
     }
 
 })
-function newChatter(user){
+function newChatter(user, isPoint){
+    let hidden=isPoint?'':'hidden'
     return `<a class="nav-link border-bottom blockstyle" name="chat-user" id="chat-user-${user.id}" data-user-id="${user.id}" onclick="change(this)">
         <img src="${user.avatar}" class="rounded-circle" style="width:40px;height:40px">
         <span class="fs-5 fw-bold text-dark" id="chat-user-name">${user.name}</span>
-        <i class="remindIcon fs-3" name="point">&bull;</i>
+        <i class="remindIcon fs-3 ${hidden}" name="point">&bull;</i>
         </a>`
 }
 function myMessage(message){
@@ -82,7 +83,6 @@ function othersMessage(message){
 }
 function change(e){
     const { userId } = e.dataset
-    // console.log(e.querySelector('i'))
     //
     document.getElementById('chat-area').hidden=false
     e.querySelector('i').classList.add('hidden')

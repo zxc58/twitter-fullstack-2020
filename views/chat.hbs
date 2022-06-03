@@ -39,8 +39,9 @@
         name:'{{newChatting.name}}',
         avatar:'{{newChatting.avatar}}'
     }
-    //console.log(x)
-    //console.log(typeof x)
-    document.getElementById('people-group').innerHTML+=newChatter(x)
+    if(!document.getElementById('chat-user-{{newChatting.id}}')){
+        document.getElementById('people-group').innerHTML+=newChatter(x,false)
+    }
+    document.getElementById('chat-user-{{newChatting.id}}').click()
 </script>
 {{/if}}
