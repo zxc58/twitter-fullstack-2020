@@ -4,14 +4,23 @@
         <nav class="nav flex-column" id="people-group">
             <a class="nav-link border-bottom">
                 <span class="fw-bold text-dark fs-5">
-                    Message
+                    私人訊息
                 </span>
             </a>
             {{#each chatUsers}}
-                <a class="nav-link border-bottom blockstyle" name="chat-user" id="chat-user-{{this.id}}" data-user-id="{{this.id}}" onclick="change(this)">
+                <a class="nav-link border-bottom blockstyle " name="chat-user" id="chat-user-{{this.id}}" data-user-id="{{this.id}}" onclick="change(this)">
                     <img src="{{this.avatar}}" class="rounded-circle" style="width:40px;height:40px">
+
                     <span class="fs-5 fw-bold text-dark" id="chat-user-name">{{this.name}}</span>
-                    <i class="remindIcon fs-3 {{#ifCond this.allBeenSeen 0 }}{{else}}hidden{{/ifCond}}" name="point">&bull;</i>
+                    <br/>
+                    {{#compareTime this.sentMessages.createdAt this.receivedMessages.createdAt}}
+                        <small class="text-dark">{{this.sentMessages.content}}</small>
+                        <i class="remindIcon fs-3 {{#ifCond this.sentMessages.beenSeen 0 }}{{else}}hidden{{/ifCond}}" name="point">&bull;</i>
+                    {{else}}
+                        <small class="text-dark">{{this.receivedMessages.content}}</small>
+                        <i class="remindIcon fs-3 hidden" name="point">&bull;</i>
+                    {{/compareTime}}                
+
                 </a>
             {{/each}}
         </nav>
@@ -40,7 +49,7 @@
         avatar:'{{newChatting.avatar}}'
     }
     if(!document.getElementById('chat-user-{{newChatting.id}}')){
-        document.getElementById('people-group').innerHTML+=newChatter(x,false)
+        document.getElementById('people-group').innerHTML+=newChatter(x,false,'')
     }
     document.getElementById('chat-user-{{newChatting.id}}').click()
 </script>

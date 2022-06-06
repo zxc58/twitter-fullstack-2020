@@ -43,6 +43,7 @@ chatForm.addEventListener('submit', function(e) {
         socket.emit('post message',JSON.stringify(message))
         chatContent.innerHTML+=myMessage(chatInput.value)
         chatContent.scrollTop = chatContent.scrollHeight
+        document.getElementById(`chat-user-${receiverInput.value}`).querySelector('small').innerHTML=chatInput.value
         chatInput.value=''
     }
 })
@@ -57,17 +58,20 @@ socket.on('get message', async (message) => {
 
     if(chatUser){
         chatUser.querySelector('i').classList.remove('hidden')
+        chatUser.querySelector('small').innerHTML=content
     }else{
         //add a new nav for this sender
-        document.getElementById('people-group').innerHTML+=newChatter(JSON.parse(message).sender,true)
+        document.getElementById('people-group').innerHTML+=newChatter(JSON.parse(message).sender,true,content)
     }
 
 })
-function newChatter(user, isPoint){
+function newChatter(user, isPoint, content){
     let hidden=isPoint?'':'hidden'
     return `<a class="nav-link border-bottom blockstyle" name="chat-user" id="chat-user-${user.id}" data-user-id="${user.id}" onclick="change(this)">
         <img src="${user.avatar}" class="rounded-circle" style="width:40px;height:40px">
         <span class="fs-5 fw-bold text-dark" id="chat-user-name">${user.name}</span>
+        <br/>
+        <small class="text-dark">${content}</small>
         <i class="remindIcon fs-3 ${hidden}" name="point">&bull;</i>
         </a>`
 }

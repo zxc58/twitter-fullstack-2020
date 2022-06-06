@@ -20,8 +20,8 @@ const messageController = {
         raw: true,
         nest: true
       })
-      res.json(chatUsers)
-      // res.render('chat', { chatUsers })
+      // res.json(chatUsers)
+      res.render('chat', { chatUsers })
     } catch (err) {
       next(err)
     }

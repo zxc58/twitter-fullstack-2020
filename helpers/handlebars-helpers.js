@@ -14,5 +14,8 @@ module.exports = {
   },
   localizedTimeFormat: time => {
     return dayjs(time).format('H') < 12 ? dayjs(time).format('上午 h:mm ‧ YYYY年MM月DD日') : dayjs(time).format('下午 h:mm ‧ YYYY年MM月DD日')
+  },
+  compareTime: function (a, b, options) {
+    return new Date(a).valueOf() > new Date(b).valueOf() ? options.fn(this) : options.inverse(this)
   }
 }
