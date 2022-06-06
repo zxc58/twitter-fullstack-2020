@@ -11,15 +11,17 @@ const messageController = {
         where: {
           [Op.or]: [sequelize.where(sequelize.col('sentMessages.receiverId'), id), sequelize.where(sequelize.col('receivedMessages.senderId'), id)]
         },
-        include: [{ model: Message, as: 'sentMessages', where: { receiverId: id }, required: false }, { model: Message, as: 'receivedMessages', where: { senderId: id }, required: false }],
-        attributes: { include: [[sequelize.fn('MIN', sequelize.col('sentMessages.beenSeen')), 'allBeenSeen']] },
+        include: [
+          { model: Message, as: 'sentMessages', where: { receiverId: id }, required: false, order: [[sequelize.col('sentMessages.createdAt'), 'DESC']] },
+          { model: Message, as: 'receivedMessages', where: { senderId: id }, required: false, order: [[sequelize.col('receivedMessages.createdAt'), 'DESC']] }
+        ],
+        // attributes: { include: [[sequelize.fn('MIN', sequelize.col('sentMessages.beenSeen')), 'allBeenSeen']] },
         group: sequelize.col('User.id'),
         raw: true,
         nest: true
       })
-      // console.log(chatUsers.length)
-      // res.json(chatUsers)
-      res.render('chat', { chatUsers })
+      res.json(chatUsers)
+      // res.render('chat', { chatUsers })
     } catch (err) {
       next(err)
     }
