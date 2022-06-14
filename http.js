@@ -11,23 +11,22 @@ io.on('connection', async (socket) => {
   const { userId } = socket.handshake.query
   if ((!sockets[userId]) && userId) {
     socket.on('post message', async (message) => {
-      const { senderId, receiverId } = JSON.parse(message)
-      // function :store into database
-      Message.create(JSON.parse(message))
-      const sender = await User.findByPk(Number(senderId), { attributes: ['id', 'avatar', 'name'] })
-      if (sockets[receiverId]) {
-        sockets[receiverId].emit('get message', JSON.stringify({ message: JSON.parse(message), sender: sender.toJSON() }))
-        sockets[receiverId].emit('notify user', senderId)
+      const messageObject = JSON.parse(message)
+      if (messageObject.senderId !== messageObject.receiverId) {
+        Message.create(JSON.parse(message))
+        const sender = await User.findByPk(Number(messageObject.senderId), { attributes: ['id', 'avatar', 'name'] })
+        if (sockets[messageObject.receiverId]) {
+          sockets[messageObject.receiverId].emit('get message', JSON.stringify({ message: messageObject, sender: sender.toJSON() }))
+          sockets[messageObject.receiverId].emit('notify user', messageObject.senderId)
+        }
       }
     })
     socket.on('disconnect', reason => {
       sockets[userId] = null
       delete sockets[userId]
-      console.log(userId, ' delete:', reason)
     })
     sockets[userId] = socket
     socket = null
   }
-  console.log('success', userId)
 })
 server.listen(port, () => console.log('server start now'))
