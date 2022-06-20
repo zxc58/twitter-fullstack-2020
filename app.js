@@ -11,7 +11,6 @@ const methodOverride = require('method-override')
 const { getUser } = require('./_helpers')
 const handlebarsHelpers = require('./helpers/handlebars-helpers')
 const app = express()
-const port = process.env.PORT || 3000
 const SESSION_SECRET = 'secret'
 
 app.engine('hbs', exphbs({ defaultLayout: 'main', extname: '.hbs', helpers: handlebarsHelpers }))

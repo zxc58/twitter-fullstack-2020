@@ -1,25 +1,25 @@
-const { getOffset, getPagination } = require('../helpers/pagination-helper')
 const db = require('../models')
 const { Op } = require('sequelize')
-const { Tweet, User, Like, Reply, sequelize, Message } = db
-const { catchTopUsers } = require('../helpers/sequelize-helper')
+const { User, sequelize, Message } = db
 const helpers = require('../_helpers')
 //
 const messageController = {
-  startChatting: async (req, res, next) => {
+  chatPage: async (req, res, next) => {
     try {
       const id = helpers.getUser(req).id
       const chatUsers = await User.findAll({
-      //
         where: {
           [Op.or]: [sequelize.where(sequelize.col('sentMessages.receiverId'), id), sequelize.where(sequelize.col('receivedMessages.senderId'), id)]
         },
-        include: [{ model: Message, as: 'sentMessages' }, { model: Message, as: 'receivedMessages' }],
+        include: [
+          { model: Message, as: 'sentMessages', where: { receiverId: id }, required: false, order: [[sequelize.col('sentMessages.createdAt'), 'DESC']] },
+          { model: Message, as: 'receivedMessages', where: { senderId: id }, required: false, order: [[sequelize.col('receivedMessages.createdAt'), 'DESC']] }
+        ],
+        // attributes: { include: [[sequelize.fn('MIN', sequelize.col('sentMessages.beenSeen')), 'allBeenSeen']] },
         group: sequelize.col('User.id'),
         raw: true,
         nest: true
       })
-      // console.log(chatUsers.length)
       // res.json(chatUsers)
       res.render('chat', { chatUsers })
     } catch (err) {
@@ -29,19 +29,20 @@ const messageController = {
   startChattingWith: async (req, res, next) => {
     try {
       const id = helpers.getUser(req).id
-      const newId = Number(req.params.id)
+      const newChattingId = Number(req.params.id)
       const chatUsers = await User.findAll({
       //
         where: {
-          [Op.or]: [sequelize.where(sequelize.col('sentMessages.receiverId'), id), sequelize.where(sequelize.col('receivedMessages.senderId'), id),{id:newId}]
+          [Op.or]: [sequelize.where(sequelize.col('sentMessages.receiverId'), id), sequelize.where(sequelize.col('receivedMessages.senderId'), id)]
         },
-        include: [{ model: Message, as: 'sentMessages' }, { model: Message, as: 'receivedMessages' }],
+        include: [{ model: Message, as: 'sentMessages', where: { receiverId: id }, required: false }, { model: Message, as: 'receivedMessages', where: { senderId: id }, required: false }],
+        attributes: { include: [[sequelize.fn('MIN', sequelize.col('sentMessages.beenSeen')), 'allBeenSeen']] },
         group: sequelize.col('User.id'),
         raw: true,
         nest: true
       })
-
-      res.render('chat', { chatUsers , newId})
+      const newChatting = await User.findByPk(newChattingId)
+      res.render('chat', { chatUsers, newChatting: newChatting.toJSON() })
     } catch (err) {
       next(err)
     }

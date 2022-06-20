@@ -6,7 +6,5 @@ const { userId } = leftNav.dataset
 const socket = io({query:{userId}})
 // 處理通知事務
 socket.on('notify user',(senderId)=>{
-    if(!document.getElementById('receiver-input')){
-        publicChatRemind.style.visibility='visible'
-    }
+    publicChatRemind.classList.remove('hidden')
 })

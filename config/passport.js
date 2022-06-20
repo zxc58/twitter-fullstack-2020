@@ -1,7 +1,7 @@
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 const bcrypt = require('bcryptjs')
-const { User } = require('../models')
+const { User, Message } = require('../models')
 
 passport.use(new LocalStrategy({
   usernameField: 'account',
@@ -28,9 +28,10 @@ passport.serializeUser((user, done) => {
 })
 
 passport.deserializeUser((id, done) => {
-  User.findByPk(id)
-    .then(user => {
+  Promise.all([User.findByPk(id), Message.findOne({ where: { receiverId: id, beenseen: 0 } })])
+    .then(([user, newMessage]) => {
       user = user.toJSON()
+      if (newMessage) { user.notice = true } else { user.notice = false }
       return done(null, user)
     }).catch(err => done(err))
 })
